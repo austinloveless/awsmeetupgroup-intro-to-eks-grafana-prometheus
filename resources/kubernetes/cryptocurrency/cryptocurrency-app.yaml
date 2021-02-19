@@ -1,0 +1,146 @@
+# Crypto Namespace
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: crypto
+  labels:
+    name: crypto
+
+---
+########
+# CRYPTO-CLIENT
+########
+
+# Client Secrets
+apiVersion: v1
+kind: Secret
+metadata:
+  name: client-secrets
+  namespace: crypto
+type: Opaque
+data:
+  ACCESS_KEY_ID: QUtJQTNYNFZOTlBLTE1JTUlBM1g=
+  SECRET_ACCESS_KEY: Yk5DdmpsK29aY2h3VlhYdi9FS0h0Z242N1Q2czFURVZOU0VXbHVCSQ==
+
+---
+# ConfigMap
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: client-configmap
+  namespace: crypto
+data:
+  DATEBASE_NAME: AWSMeetupGroupESDB
+  TABLE_NAME: CryptoData
+  AWS_REGION: us-east-1
+
+---
+# Job
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: crypto-client-job
+  namespace: crypto
+spec:
+  template:
+    metadata:
+      labels:
+        app: crypto-client
+    spec:
+      containers:
+        # BCH CLIENT
+        - name: crypto-client-bch
+          image: austinloveless/crypto-client
+          envFrom:
+            - secretRef:
+                name: client-secrets
+            - configMapRef:
+                name: client-configmap
+          env:
+            - name: API_URL
+              value: http://crypto-server-service.crypto.svc.cluster.local
+            - name: CRYPTO_SYMBOL
+              value: BCH
+        # ETH CLIENT
+        - name: crypto-client-eth
+          image: austinloveless/crypto-client
+          envFrom:
+            - secretRef:
+                name: client-secrets
+            - configMapRef:
+                name: client-configmap
+          env:
+            - name: API_URL
+              value: http://crypto-server-service.crypto.svc.cluster.local
+            - name: CRYPTO_SYMBOL
+              value: ETH
+        # LTC CLIENT
+        - name: crypto-client-ltc
+          image: austinloveless/crypto-client
+          envFrom:
+            - secretRef:
+                name: client-secrets
+            - configMapRef:
+                name: client-configmap
+          env:
+            - name: API_URL
+              value: http://crypto-server-service.crypto.svc.cluster.local
+            - name: CRYPTO_SYMBOL
+              value: LTC
+      restartPolicy: Never
+
+---
+########
+# CRYPTO-SERVER
+########
+
+# ReplicaSet
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: crypto-server-rs
+  namespace: crypto
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: crypto-server
+  template:
+    metadata:
+      labels:
+        app: crypto-server
+    spec:
+      containers:
+        - name: crypto-server
+          image: austinloveless/crypto-server
+          envFrom:
+            - secretRef:
+                name: server-secrets
+          ports:
+            - containerPort: 8080
+---
+# Server Secrets
+apiVersion: v1
+kind: Secret
+metadata:
+  name: server-secrets
+  namespace: crypto
+type: Opaque
+data:
+  API_KEY: M2JlODY0MjEtM2FlMi00NDM4LTg4YjUtNDVkZmM4MTE3YmEz
+
+---
+# Crypto-Server Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: crypto-server-service
+  namespace: crypto
+spec:
+  selector:
+    app: crypto-server
+  ports:
+    - name: crypto-server
+      port: 80
+      targetPort: 8080
+  type: ClusterIP

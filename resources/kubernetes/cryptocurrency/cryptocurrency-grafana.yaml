@@ -1,0 +1,128 @@
+---
+########
+# CRYPTO-GRAFANA
+########
+
+# Grafana StatefulSet
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: grafana-statefulset
+  namespace: crypto
+spec:
+  replicas: 1
+  serviceName: grafana-service
+  selector:
+    matchLabels:
+      app: grafana
+  template:
+    metadata:
+      labels:
+        app: grafana
+    spec:
+      securityContext:
+        runAsUser: 472
+        fsGroup: 1
+      containers:
+        - name: grafana
+          image: grafana/grafana:7.3.0
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: GF_AUTH_BASIC_ENABLED
+              value: 'true'
+            - name: GF_AUTH_ANONYMOUS_ENABLED
+              value: 'true'
+            - name: GF_INSTALL_PLUGINS
+              value: 'grafana-timestream-datasource'
+            - name: GF_AUTH_ANONYMOUS_ORG_ROLE
+              value: Viewer
+            - name: GF_LOG_LEVEL
+              value: warn
+            - name: GF_LOG_MODE
+              value: console
+            - name: GF_METRICS_ENABLED
+              value: 'true'
+            - name: GF_SECURITY_ADMIN_USER
+              valueFrom:
+                secretKeyRef:
+                  name: grafana-credentials
+                  key: user
+            - name: GF_SECURITY_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: grafana-credentials
+                  key: password
+          volumeMounts:
+            - name: grafana-data
+              mountPath: /var/lib/grafana
+          ports:
+            - name: web
+              containerPort: 3000
+          resources:
+            requests:
+              memory: 100Mi
+              cpu: 100m # 100 millicpu = 0.1 of a vCPU/core
+            limits:
+              memory: 200Mi
+              cpu: 200m
+  volumeClaimTemplates:
+    - apiVersion: v1
+      kind: PersistentVolumeClaim
+      metadata:
+        name: grafana-data
+        namespace: crypto
+      spec:
+        accessModes:
+          - ReadWriteOnce # the volume can be mounted as read-write by a single node
+        storageClassName: gp2
+        resources:
+          requests:
+            storage: 2Gi
+
+---
+# Grafana Secrets
+apiVersion: v1
+kind: Secret
+metadata:
+  name: grafana-credentials
+  namespace: crypto
+data:
+  user: YXdzbWVldHVwZ3JvdXA=
+  password: UGFzc3dvcmQxIQ==
+
+---
+# Grafana Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana-service
+  namespace: crypto
+spec:
+  selector:
+    app: grafana
+  ports:
+    - name: grafana
+      port: 80
+      targetPort: 3000
+      nodePort: 30000
+  type: NodePort
+
+---
+# Grafana Ingress
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: client-ingress
+  namespace: crypto
+  annotations:
+    kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: instance
+spec:
+  rules:
+    - http:
+        paths:
+          - path: /*
+            backend:
+              serviceName: grafana-service
+              servicePort: 80
