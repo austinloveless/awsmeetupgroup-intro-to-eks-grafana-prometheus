@@ -1,14 +1,15 @@
 const express = require('express');
 const app = express();
 const axios = require('axios');
+const swStats = require('swagger-stats');
+
+app.use(swStats.getMiddleware());
 
 const PORT = 3001;
 const HOST = '0.0.0.0';
 
-console.log(process.env);
-
-app.get('/addAnimal/:newAnimal', async (req, res) => {
-  const animalURL = `http://${process.env.SVC}.${process.env.NAMESPACE}.svc.cluster.local/addAnimal/${req.params.newAnimal}`;
+app.get('/client/addAnimal/:newAnimal', async (req, res) => {
+  const animalURL = `http://${process.env.SVC}.${process.env.NAMESPACE}.svc.cluster.local/server/addAnimal/${req.params.newAnimal}`;
   await addAnimal(animalURL);
   res.send('axios request sent');
 });

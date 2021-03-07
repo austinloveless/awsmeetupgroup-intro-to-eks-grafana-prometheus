@@ -94,11 +94,11 @@ spec:
 # CRYPTO-SERVER
 ########
 
-# ReplicaSet
+# Deployment
 apiVersion: apps/v1
-kind: ReplicaSet
+kind: Deployment
 metadata:
-  name: crypto-server-rs
+  name: crypto-server
   namespace: crypto
 spec:
   replicas: 3

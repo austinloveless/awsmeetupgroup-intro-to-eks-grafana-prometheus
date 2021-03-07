@@ -25,9 +25,9 @@ spec:
 
 ---
 apiVersion: apps/v1
-kind: ReplicaSet
+kind: Deployment
 metadata:
-  name: client-rs
+  name: client
   namespace: app
 spec:
   replicas: 3
@@ -38,6 +38,10 @@ spec:
     metadata:
       labels:
         app: client
+      annotations:
+        prometheus.io/scrape: 'true'
+        prometheus.io/port: '3001'
+        prometheus.io/path: '/swagger-stats/metrics'
     spec:
       containers:
         - name: client
@@ -49,6 +53,7 @@ spec:
               value: app
           ports:
             - containerPort: 3001
+
 ########
 # APP_2
 ########
@@ -70,9 +75,9 @@ spec:
 
 ---
 apiVersion: apps/v1
-kind: ReplicaSet
+kind: Deployment
 metadata:
-  name: server-rs
+  name: server
   namespace: app
 spec:
   replicas: 3
@@ -83,12 +88,17 @@ spec:
     metadata:
       labels:
         app: server
+      annotations:
+        prometheus.io/scrape: 'true'
+        prometheus.io/port: '3002'
+        prometheus.io/path: '/swagger-stats/metrics'
     spec:
       containers:
         - name: server
           image: austinloveless/server:latest
           ports:
             - containerPort: 3002
+
 ---
 apiVersion: extensions/v1beta1
 kind: Ingress
@@ -131,28 +141,26 @@ spec:
             backend:
               serviceName: server-service
               servicePort: 80
-# ANOTHER WAY TO DO THIS ^
+  # ANOTHER WAY TO DO THIS ^
 # apiVersion: extensions/v1beta1
 # kind: Ingress
 # metadata:
-#   name: ingress-resource
+#   name: app-ingress
+#   namespace: app
 #   annotations:
-#     kubernetes.io/ingress.class: nginx
-#     nginx.ingress.kubernetes.io/rewrite-target: /$2
-#     nginx.ingress.kubernetes.io/ssl-redirect: "false"
+#     kubernetes.io/ingress.class: alb
+#     alb.ingress.kubernetes.io/scheme: internet-facing
+#     alb.ingress.kubernetes.io/target-type: instance
 # spec:
 #   rules:
 #     - http:
 #         paths:
-#           - path: /ping(/|$)(.*)
+#           - path: /client/*
 #             backend:
-#               serviceName: ping-service
-#               servicePort: 8080
-#           - path: /data(/|$)(.*)
+#               serviceName: client-service
+#               servicePort: 80
+#           - path: /server/*
 #             backend:
-#               serviceName: data-service
-#               servicePort: 8080
-#           - path: /admin(/|$)(.*)
-#             backend:
-#               serviceName: admin-service
-#               servicePort: 8080
+#               serviceName: server-service
+#               servicePort: 80
+
