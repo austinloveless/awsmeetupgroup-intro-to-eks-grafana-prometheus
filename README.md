@@ -8,3 +8,7 @@ This workshop is intended to be a thorough tutorial on how to build an applicati
 <p align="center">
   <img src="./images/AWS-K8s.png" alt="AWS-K8s" width="500">
 </p>
+
+<p align="left">
+  <img src="./images/AWSMeetupGroupChapterBadge-Light.png" alt="AWS-UG" width="275">
+</p>
