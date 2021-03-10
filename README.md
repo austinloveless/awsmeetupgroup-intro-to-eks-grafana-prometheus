@@ -10,5 +10,5 @@ This workshop is intended to be a thorough tutorial on how to build an applicati
 </p>
 
 <p align="left">
-  <img src="./images/AWSMeetupGroupChapterBadge-Light.png.png" alt="AWS-UG" width="275">
+  <img src="./images/AWSMeetupGroupChapterBadge-Light.png" alt="AWS-UG" width="275">
 </p>
