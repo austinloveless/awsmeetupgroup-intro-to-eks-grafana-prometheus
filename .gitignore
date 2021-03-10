@@ -132,3 +132,4 @@ node_modules
 .DS_Store
 hypriotos-rpi-v1.12.3.img
 .vscode/
+private.text
